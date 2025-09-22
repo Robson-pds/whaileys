@@ -1049,7 +1049,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
     ...sock,
     sendMessageAck,
     sendRetryRequest,
-    offerCall,
     rejectCall,
     terminateCall,
     fetchMessageHistory,

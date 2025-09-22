@@ -4,8 +4,13 @@ import type NodeCache from "node-cache";
 import type { Logger } from "pino";
 import type { URL } from "url";
 import { proto } from "../../WAProto";
-import { AuthenticationState, TransactionCapabilityOptions } from "./Auth";
+import {
+  AuthenticationState,
+  SignalAuthState,
+  TransactionCapabilityOptions
+} from "./Auth";
 import { MediaConnInfo } from "./Message";
+import { SignalRepository } from "./Signal";
 
 export type WAVersion = [number, number, number];
 export type WABrowserDescription = [string, string, string];
