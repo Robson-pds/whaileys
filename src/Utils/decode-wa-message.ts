@@ -154,6 +154,10 @@ export const decodeMessageStanza = (
             fullMessage.verifiedBizName = details.verifiedName;
           }
 
+          if (attrs.count && tag === "enc") {
+            fullMessage.key.isRetryResponse = true;
+          }
+
           if (tag !== "enc" && tag !== "plaintext") {
             continue;
           }
