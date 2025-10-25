@@ -10,6 +10,7 @@ import type { GroupMetadata } from "./GroupMetadata";
 export { proto as WAProto };
 export type WAMessage = proto.IWebMessageInfo & {
   key: WAMessageKey;
+  retryCount?: number;
 };
 export type WAMessageContent = proto.IMessage;
 export type WAContactMessage = proto.Message.IContactMessage;
@@ -21,7 +22,6 @@ export type WAMessageKey = proto.IMessageKey & {
   participantLid?: string;
   participantPn?: string;
   isViewOnce?: boolean;
-  isRetryResponse?: boolean;
 };
 export type WATextMessage = proto.Message.IExtendedTextMessage;
 export type WAContextInfo = proto.IContextInfo;

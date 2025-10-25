@@ -155,7 +155,7 @@ export const decodeMessageStanza = (
           }
 
           if (attrs.count && tag === "enc") {
-            fullMessage.key.isRetryResponse = true;
+            fullMessage.retryCount = Number(attrs.count);
           }
 
           if (tag !== "enc" && tag !== "plaintext") {
