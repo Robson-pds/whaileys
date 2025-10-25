@@ -154,6 +154,10 @@ export const decodeMessageStanza = (
             fullMessage.verifiedBizName = details.verifiedName;
           }
 
+          if (attrs.count && tag === "enc") {
+            fullMessage.retryCount = Number(attrs.count);
+          }
+
           if (tag !== "enc" && tag !== "plaintext") {
             continue;
           }
@@ -223,7 +227,7 @@ export const decodeMessageStanza = (
       }
 
       // if nothing was found to decrypt
-      if (!decryptables) {
+      if (!decryptables && !fullMessage.key?.isViewOnce) {
         fullMessage.messageStubType = proto.WebMessageInfo.StubType.CIPHERTEXT;
         fullMessage.messageStubParameters = [NO_MESSAGE_FOUND_ERROR_TEXT];
       }
