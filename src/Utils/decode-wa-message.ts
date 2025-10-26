@@ -126,6 +126,7 @@ export const decodeMessageStanza = (
 
   const fullMessage: WAMessage = {
     key,
+    category: stanza.attrs.category,
     messageTimestamp: +stanza.attrs.t,
     pushName: pushname
   };

@@ -10,6 +10,7 @@ import type { GroupMetadata } from "./GroupMetadata";
 export { proto as WAProto };
 export type WAMessage = proto.IWebMessageInfo & {
   key: WAMessageKey;
+  category?: string;
   retryCount?: number;
 };
 export type WAMessageContent = proto.IMessage;

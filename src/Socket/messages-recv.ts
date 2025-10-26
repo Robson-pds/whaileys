@@ -225,7 +225,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
       await sendNode(receipt);
 
-      logger.info({ msgAttrs: node.attrs, retryCount }, "sent retry receipt");
+      logger.debug({ msgAttrs: node.attrs, retryCount }, "sent retry receipt");
     });
   };
 
@@ -765,7 +765,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
           await decryptionTask;
           // message failed to decrypt
           if (
-            msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT
+            msg.messageStubType === proto.WebMessageInfo.StubType.CIPHERTEXT &&
+            category !== "peer"
           ) {
             logger.debug(
               { key: msg.key, params: msg.messageStubParameters },
