@@ -331,7 +331,8 @@ export const extractDeviceJids = (
             ) {
               extracted.push({
                 user: lid || user,
-                device
+                device,
+                isLid: Boolean(lid || item.attrs?.jid?.endsWith("@lid"))
               });
             }
           }

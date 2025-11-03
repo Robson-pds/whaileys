@@ -511,8 +511,12 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
         const senderKeyJids: string[] = [];
         // ensure a connection is established with every device
-        for (const { user, device } of devices) {
-          const encodedLid = jidEncode(user, "lid", device);
+        for (const { user, device, isLid } of devices) {
+          const encodedLid = jidEncode(
+            user,
+            isLid ? "lid" : "s.whatsapp.net",
+            device
+          );
           if (!senderKeyMap[encodedLid]) {
             senderKeyJids.push(encodedLid);
             // store that this person has had the sender keys sent to them
@@ -581,10 +585,14 @@ export const makeMessagesSocket = (config: SocketConfig) => {
         const meLids: string[] = [];
         const otherLids: string[] = [];
 
-        for (const { user, device } of devices) {
+        for (const { user, device, isLid } of devices) {
           const isMe = user === meLidUser;
 
-          const encodedLid = jidEncode(user, "lid", device);
+          const encodedLid = jidEncode(
+            user,
+            isLid ? "lid" : "s.whatsapp.net",
+            device
+          );
 
           if (isMe) {
             meLids.push(encodedLid);
@@ -639,7 +647,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
         const participantDevice = jidDecode(participant!.jid)!.device;
 
-        const [{ user: participantLidUser }] = await getUSyncDevices(
+        const [{ user: participantLidUser, isLid }] = await getUSyncDevices(
           [participant!.jid],
           true,
           false
@@ -647,7 +655,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
         const participantFulLid = jidEncode(
           participantLidUser,
-          "lid",
+          isLid ? "lid" : "s.whatsapp.net",
           participantDevice
         );
 
