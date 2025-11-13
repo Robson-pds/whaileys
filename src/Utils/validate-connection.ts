@@ -82,7 +82,9 @@ export const generateLoginNode = (
     ...getClientPayload(config),
     passive: true,
     username: +user,
-    device: device
+    device: device,
+    lidDbMigrated: false,
+    pull: false
   };
   return proto.ClientPayload.fromObject(payload);
 };
