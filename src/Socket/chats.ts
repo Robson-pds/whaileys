@@ -858,9 +858,12 @@ export const makeChatsSocket = (config: SocketConfig) => {
       }
 
       const historyMsg = getHistoryMsg(msg.message!);
+
       const shouldProcessHistoryMsg = historyMsg
         ? shouldSyncHistoryMessage(historyMsg) &&
-          PROCESSABLE_HISTORY_TYPES.includes(historyMsg.syncType!)
+          PROCESSABLE_HISTORY_TYPES.includes(
+            historyMsg.syncType! as proto.HistorySync.HistorySyncType
+          )
         : false;
       // we should have app state keys before we process any history
       if (shouldProcessHistoryMsg) {
