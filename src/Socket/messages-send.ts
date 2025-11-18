@@ -767,6 +767,21 @@ export const makeMessagesSocket = (config: SocketConfig) => {
         );
       }
 
+      const contactTcToken =
+        !isGroup && !isRetryResend && !isStatus
+          ? await authState.keys.get("contacts-tc-token", [destinationJid])
+          : {};
+
+      const tcTokenBuffer = contactTcToken[destinationJid]?.token;
+
+      if (tcTokenBuffer) {
+        (stanza.content as BinaryNode[]).push({
+          tag: "tctoken",
+          attrs: {},
+          content: tcTokenBuffer
+        });
+      }
+
       const innerMessage =
         message.documentWithCaptionMessage?.message || message;
 
