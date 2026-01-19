@@ -40,6 +40,8 @@ import {
   MediaDownloadOptions
 } from "./messages-media";
 import { sha256 } from "./crypto";
+import { shouldIncludeReportingToken } from "./reporting-utils";
+import { randomBytes } from "crypto";
 
 type MediaUploadData = {
   media: WAMediaUpload;
@@ -52,7 +54,7 @@ type MediaUploadData = {
   mimetype?: string;
   width?: number;
   height?: number;
-  waveform?: Uint8Array | null;
+  waveform?: string | Uint8Array | null;
 };
 
 const MIMETYPE_MAP: { [T in MediaType]?: string } = {
@@ -188,6 +190,8 @@ export const prepareWAMessageMedia = async (
     logger?.debug("computed audio duration");
   }
 
+  console.log("🚀 ~ requiresWaveformProcessing:", requiresWaveformProcessing);
+  console.log("🚀 ~ uploadData.waveform:", uploadData.waveform);
   if (requiresWaveformProcessing && originalFilePath) {
     uploadData.waveform = await getAudioWaveform(originalFilePath, logger);
     if (uploadData.waveform) {
@@ -485,6 +489,13 @@ export const generateWAMessageContent = async (
         type: WAProto.Message.ProtocolMessage.Type.MESSAGE_EDIT
       }
     };
+  }
+
+  if (shouldIncludeReportingToken(m)) {
+    m.messageContextInfo = m.messageContextInfo || {};
+    if (!m.messageContextInfo.messageSecret) {
+      m.messageContextInfo.messageSecret = randomBytes(32);
+    }
   }
 
   return WAProto.Message.fromObject(m);
