@@ -35,6 +35,10 @@ import {
 } from "../Utils";
 import { getUrlInfo } from "../Utils/link-preview";
 import {
+  getMessageReportingToken,
+  shouldIncludeReportingToken
+} from "../Utils/reporting-utils";
+import {
   areJidsSameUser,
   BinaryNode,
   BinaryNodeAttributes,
@@ -555,7 +559,6 @@ export const makeMessagesSocket = (config: SocketConfig) => {
       } else if (!isRetryResend) {
         const { user } = jidDecode(destinationJid)!;
         const meUser = jidDecode(meId)?.user;
-        const isMe = areJidsSameUser(user, meUser);
 
         const encodedMeMsg = encodeWAMessage({
           deviceSentMessage: {
@@ -564,8 +567,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
           }
         });
 
-        if (additionalAttributes?.["category"] === "peer" && isMe) {
-          devices.push({ user: meUser! });
+        if (additionalAttributes?.["category"] === "peer" && user === meUser) {
+          devices.push({ user: meUser });
         } else {
           const additionalDevices = await getUSyncDevices(
             [meId, jid],
@@ -767,12 +770,12 @@ export const makeMessagesSocket = (config: SocketConfig) => {
         );
       }
 
-      const contactTcToken =
+      const contactTcTokenData =
         !isGroup && !isRetryResend && !isStatus
           ? await authState.keys.get("contacts-tc-token", [destinationJid])
           : {};
 
-      const tcTokenBuffer = contactTcToken[destinationJid]?.token;
+      const tcTokenBuffer = contactTcTokenData[destinationJid]?.token;
 
       if (tcTokenBuffer) {
         (stanza.content as BinaryNode[]).push({
@@ -795,6 +798,34 @@ export const makeMessagesSocket = (config: SocketConfig) => {
         });
 
         logger.debug({ jid }, `adding biz node for buttons message`);
+      }
+
+      if (
+        !isRetryResend &&
+        shouldIncludeReportingToken(message) &&
+        message.messageContextInfo?.messageSecret
+      ) {
+        const reportingKey: WAMessageKey = {
+          id: msgId,
+          fromMe: true,
+          remoteJid: destinationJid,
+          participant: participant?.jid
+        };
+
+        const reportingNode = await getMessageReportingToken(
+          encodedMsg,
+          message,
+          reportingKey
+        ).catch(err => {
+          logger.warn({ jid, err }, "failed to attach reporting token");
+
+          return null;
+        });
+
+        if (reportingNode) {
+          (stanza.content as BinaryNode[]).push(reportingNode);
+          logger.trace({ jid }, "added reporting token to message");
+        }
       }
 
       logger.debug(
