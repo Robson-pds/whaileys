@@ -10,6 +10,7 @@ import makeWASocket, {
   useMultiFileAuthState
 } from '../src'
 import MAIN_LOGGER from '../src/Utils/logger'
+import {generateWAMessageFromContent} from "../lib";
 
 const logger = MAIN_LOGGER.child({})
 logger.level = 'trace'
@@ -135,9 +136,65 @@ const startSock = async () => {
               console.log('replying to', msg.key.remoteJid)
               await sock!.readMessages([msg.key])
               await sendMessageWTyping(
-                { text: 'Hello there!' },
+                { text: 'Primeira resposta curta para teste!' },
                 msg.key.remoteJid!
               )
+                const interactiveMessage = {
+                    nativeFlowMessage: {
+                        buttons: [
+                            {
+                                name: 'payment_info',
+                                buttonParamsJson: JSON.stringify({
+                                    display_text: 'Pagar com PIX',
+                                    currency: 'BRL',
+                                    total_amount: {
+                                        value: 10000,
+                                        offset: 100
+                                    },
+                                    reference_id: 'ORDER123',
+                                    type: 'physical-goods',
+                                    order: {
+                                        status: 'pending',
+                                        subtotal: {
+                                            value: 10000,
+                                            offset: 100
+                                        },
+                                        order_type: 'ORDER',
+                                        items: [
+                                            {
+                                                retailer_id: '001',
+                                                product_id: 'PROD001',
+                                                name: 'Produto Exemplo',
+                                                amount: {
+                                                    value: 10000,
+                                                    offset: 100
+                                                },
+                                                quantity: 1
+                                            }
+                                        ]
+                                    },
+                                    payment_settings: [
+                                        {
+                                            type: 'pix_static_code',
+                                            pix_static_code: {
+                                                merchant_name: 'RobsonPDS',
+                                                key: 'robson.pds@hotmail.com',
+                                                key_type: 'EMAIL'
+                                            }
+                                        }
+                                    ]
+                                })
+                            }
+                        ]
+                    }
+                }
+                //
+
+                const m = generateWAMessageFromContent(String(msg.key.remoteJid), {
+                    interactiveMessage: interactiveMessage,
+                }, {} as any)
+
+                await sock.relayMessage(String(msg.key.remoteJid), m.message as any, { messageId: String(m.key.id) })
             }
           }
         }

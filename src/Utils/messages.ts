@@ -456,14 +456,15 @@ export const generateWAMessageContent = async (
   }
 
   if ("sections" in message && !!message.sections) {
+    const msgAny = message as any
     const listMessage: proto.Message.IListMessage = {
-      sections: message.sections,
-      buttonText: message.buttonText,
-      title: message.title,
-      footerText: message.footer,
-      description: message.text,
-      listType: proto.Message.ListMessage.ListType.SINGLE_SELECT
-    };
+      sections: msgAny.sections,
+      buttonText: msgAny.buttonText,
+      title: msgAny.title,
+      footerText: msgAny.footer,
+      description: msgAny.text,
+      listType: msgAny.listType || proto.Message.ListMessage.ListType.SINGLE_SELECT
+    }
 
     m = { listMessage };
   }

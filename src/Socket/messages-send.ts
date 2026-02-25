@@ -720,54 +720,121 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
         logger.debug({ jid }, "adding device identity");
       }
-      const innerMessage =
-        message.documentWithCaptionMessage?.message || message;
 
-      if (innerMessage.listMessage) {
-        (stanza.content as BinaryNode[]).push({
-          tag: "biz",
-          attrs: {},
-          content: [
-            {
-              tag: "list",
-              attrs: {
-                type: "product_list",
-                v: "2"
-              }
+      const innerMessage =
+          message.documentWithCaptionMessage?.message || message;
+
+      const baseAttrs = {
+        actual_actors: "2",
+        host_storage: "2",
+        privacy_mode_ts: unixTimestampSeconds().toString()
+      };
+
+      const getButtonArgs = (msg: typeof innerMessage): BinaryNode | null => {
+        const nativeFlow = msg?.interactiveMessage?.nativeFlowMessage;
+        const firstButtonName = nativeFlow?.buttons?.[0]?.name;
+
+        const nativeFlowSpecials = [
+          "mpm",
+          "cta_catalog",
+          "send_location",
+          "call_permission_request",
+          "wa_payment_transaction_details",
+          "automated_greeting_message_view_catalog"
+        ];
+
+        if (
+            nativeFlow &&
+            firstButtonName &&
+            (firstButtonName === "review_and_pay" ||
+                firstButtonName === "payment_info")
+        ) {
+          return {
+            tag: "biz",
+            attrs: {
+              native_flow_name:
+                  firstButtonName === "review_and_pay"
+                      ? "order_details"
+                      : firstButtonName
             }
-          ]
-        });
-        logger.debug({ jid }, "adding biz node for list message");
-      } else if (
-        innerMessage.buttonsMessage ||
-        innerMessage.interactiveMessage?.nativeFlowMessage
-      ) {
-        (stanza.content as BinaryNode[]).push({
-          tag: "biz",
-          attrs: {},
-          content: [
-            {
-              tag: "interactive",
-              attrs: {
-                type: "native_flow",
-                v: "1"
-              },
-              content: [
-                {
-                  tag: "native_flow",
-                  attrs: {
-                    v: "9",
-                    name: "mixed"
+          };
+        }
+
+        if (
+            nativeFlow &&
+            firstButtonName &&
+            nativeFlowSpecials.includes(firstButtonName)
+        ) {
+          return {
+            tag: "biz",
+            attrs: baseAttrs,
+            content: [
+              {
+                tag: "interactive",
+                attrs: { type: "native_flow", v: "1" },
+                content: [
+                  {
+                    tag: "native_flow",
+                    attrs: { v: "2", name: firstButtonName }
                   }
-                }
-              ]
-            }
-          ]
-        });
-        logger.debug(
-          { jid },
-          "adding biz node for interactive/buttons message"
-        );
+                ]
+              },
+              {
+                tag: "quality_control",
+                attrs: { source_type: "third_party" }
+              }
+            ]
+          };
+        }
+
+        if (nativeFlow || msg?.buttonsMessage) {
+          return {
+            tag: "biz",
+            attrs: baseAttrs,
+            content: [
+              {
+                tag: "interactive",
+                attrs: { type: "native_flow", v: "1" },
+                content: [
+                  {
+                    tag: "native_flow",
+                    attrs: { v: "9", name: "mixed" }
+                  }
+                ]
+              },
+              {
+                tag: "quality_control",
+                attrs: { source_type: "third_party" }
+              }
+            ]
+          };
+        }
+
+        if (msg?.listMessage) {
+          return {
+            tag: "biz",
+            attrs: baseAttrs,
+            content: [
+              {
+                tag: "list",
+                attrs: { v: "2", type: "product_list" }
+              },
+              {
+                tag: "quality_control",
+                attrs: { source_type: "third_party" }
+              }
+            ]
+          };
+        }
+
+        return null;
+      };
+
+      const bizNode = getButtonArgs(innerMessage);
+
+      if (bizNode) {
+        (stanza.content as BinaryNode[]).push(bizNode);
+        logger.debug({ jid }, "adding custom biz node");
       }
 
       const contactTcTokenData =
@@ -783,21 +850,6 @@ export const makeMessagesSocket = (config: SocketConfig) => {
           attrs: {},
           content: tcTokenBuffer
         });
-      }
-
-      const innerMessage =
-        message.documentWithCaptionMessage?.message || message;
-
-      const buttonContent = createButtonNode(innerMessage);
-
-      if (buttonContent) {
-        (stanza.content as BinaryNode[]).push({
-          tag: "biz",
-          attrs: {},
-          content: buttonContent
-        });
-
-        logger.debug({ jid }, `adding biz node for buttons message`);
       }
 
       if (
