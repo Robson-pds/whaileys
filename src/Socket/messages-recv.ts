@@ -61,8 +61,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
     retryRequestDelayMs,
     getMessage,
     sentMessagesCache,
-    shouldIgnoreJid,
-    shouldResendMessageOn475AckError
+    shouldIgnoreJid
   } = config;
   const sock = makeMessagesSocket(config);
   const {
@@ -978,42 +977,16 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
     await sendMessageAck(node);
   };
 
-  const handleBadAck = async ({ attrs }: BinaryNode) => {
-    // current hypothesis is that if pash is sent in the ack
-    // it means -- the message hasn't reached all devices yet
-    // we'll retry sending the message here
-    // DISABLED DUE TO LOOP IN GROUPS CAUSING BAN, SHOULD BE RE-ENABLED IF SOME DEVICES NOT GET THE MESSAGE ON 1x1 CHATS
-    if (attrs.error === "475" && !isJidGroup(attrs.from)) {
-      logger.error({ attrs }, "received 475 error in ack");
+  const handleBadAck = async (node: BinaryNode) => {
+    const { attrs } = node;
 
-      if (shouldResendMessageOn475AckError) {
-        const key: WAMessageKey = {
-          remoteJid: attrs.from,
-          fromMe: true,
-          id: attrs.id
-        };
+    if (!attrs.error) return;
 
-        const msg =
-          ((await sentMessagesCache?.get(key.id!)) as
-            | proto.IMessage
-            | undefined) || (await getMessage(key, "bad-ack"));
+    logger.error({ attrs }, `received ${attrs.error} error in ack`);
 
-        if (msg) {
-          logger.trace(
-            { attrs },
-            "resending message with device_fanout set to false due to 475 ack error"
-          );
-
-          await relayMessage(key.remoteJid!, msg, {
-            messageId: key.id!,
-            useUserDevicesCache: false,
-            additionalAttributes: {
-              device_fanout: "false"
-            }
-          });
-        }
-      }
-    }
+    // The ack error is emitted so the lib user can react to it (e.g. recover the
+    // message from `sock.sentMessagesCache` and resend it via `relayMessage`).
+    ev.emit("ack.error", { attrs });
   };
 
   const flushBufferIfLastOfflineNode = (

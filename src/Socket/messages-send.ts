@@ -591,7 +591,13 @@ export const makeMessagesSocket = (config: SocketConfig) => {
             devices.length &&
             devices.find(d => d.user === destinationUser)?.lid;
 
-          if (destinationLid) destinationJid = jidEncode(destinationLid, "lid");
+          if (destinationLid) {
+            destinationJid = jidEncode(destinationLid, "lid");
+            additionalAttributes = {
+              ...additionalAttributes,
+              peer_recipient_pn: jidNormalizedUser(jid)
+            };
+          }
         }
 
         const encodedMeMsg = encodeWAMessage({
@@ -854,6 +860,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
   return {
     ...sock,
+    sentMessagesCache: config.sentMessagesCache,
     getPrivacyTokens,
     getUSyncDevices,
     assertSessions,
